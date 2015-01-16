@@ -11,18 +11,16 @@ case $# in
         killall Dock
       fi
     else
-      # Checks that a profile name was specified
       case $1 in
         save|load)
           if [ -z $2 ]; then
             echo 'Error: You must specify a profile name'
             exit 1
           else
-            PROFILE=~/Library/Preferences/$2.com.apple.dock.json
+            LOADED=~/Library/Preferences/com.apple.dock.plist
+            PROFILE=~/Library/Preferences/$2.com.apple.dock.plist
 
             if [ $1 == save ]; then
-              # Checks if profile exists, if so, prompt to overwrite
-
               if [ -e $PROFILE ]; then
                 read -p "Would you like to overwrite the profile '$2' (y/n)? " -n 1 -r
 
@@ -33,15 +31,17 @@ case $# in
                 fi
               fi
 
-              defaults read com.apple.dock > $PROFILE
+              defaults export $LOADED $PROFILE
             else
-              # Checks if profile exists, if not, error
+              if [ ! -e $PROFILE ]; then
+                echo 'Error: Profile does not exist'
+                exit 1
+              else
+                defaults delete $LOADED
+                defaults import $LOADED $PROFILE
 
-              defaults delete com.apple.dock
-              defaults write com.apple.dock '`cat $PROFILE`'
-              echo "defaults write com.apple.dock '`cat $PROFILE`'"
-
-              killall Dock
+                killall Dock
+              fi
             fi
           fi
           ;;
