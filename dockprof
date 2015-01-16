@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+case $# in
+  1|2)
+    if [ $1 == reset ]; then
+      read -p 'Are you sure you want to reset your dock to the factory defaults (y/n)? ' -n 1 -r
+
+      if [[ $REPLY =~ ^[Yy]$ ]]
+      then
+        defaults delete com.apple.dock
+        killall Dock
+      fi
+    else
+      # Checks that a profile name was specified
+      case $1 in
+        save|load)
+          if [ -z $2 ]; then
+            echo 'Error: You must specify a profile name'
+            exit 1
+          else
+            PROFILE=~/Library/Preferences/$2.com.apple.dock.json
+
+            if [ $1 == save ]; then
+              # Checks if profile exists, if so, prompt to overwrite
+
+              if [ -e $PROFILE ]; then
+                read -p "Would you like to overwrite the profile '$2' (y/n)? " -n 1 -r
+
+                if [[ ! $REPLY =~ ^[Yy]$ ]]
+                then
+                  echo 'Save aborted'
+                  exit
+                fi
+              fi
+
+              defaults read com.apple.dock > $PROFILE
+            else
+              # Checks if profile exists, if not, error
+
+              defaults delete com.apple.dock
+              defaults write com.apple.dock '`cat $PROFILE`'
+              echo "defaults write com.apple.dock '`cat $PROFILE`'"
+
+              killall Dock
+            fi
+          fi
+          ;;
+        *)
+          echo 'Error: Invalid command, expecting reset, save or load'
+          exit 1
+          ;;
+      esac
+    fi
+    ;;
+  *)
+    echo 'Usage: dockprof [reset|save|load] [profile]'
+    exit 1
+    ;;
+esac
+
